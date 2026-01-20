@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Speed Training Pro</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function Icon({ name, size = 24 }) {
+      const icons = {
+        play: '▶️',
+        check: '✅',
+        award: '🏆',
+        users: '👥',
+        right: '→',
+        trend: '📈',
+        video: '🎥',
+        wind: '💨',
+        muscle: '💪'
+      };
+      return <span style={{fontSize: size}}>{icons[name]}</span>;
+    }
+
+    function SpeedTrainingApp() {
+      const [view, setView] = useState('home');
+      const [athlete, setAthlete] = useState(null);
+      const [workouts, setWorkouts] = useState({});
+      const [week, setWeek] = useState(1);
+      const [day, setDay] = useState(1);
+      const [section, setSection] = useState(0);
+      const [timer, setTimer] = useState(0);
+      const [running, setRunning] = useState(false);
+
+      useEffect(() => {
+        const w = localStorage.getItem('workouts');
+        if (w) setWorkouts(JSON.parse(w));
+      }, []);
+
+      useEffect(() => {
+        localStorage.setItem('workouts', JSON.stringify(workouts));
+      }, [workouts]);
+      
+      useEffect(() => {
+        let interval;
+        if (running) interval = setInterval(() => setTimer(t => t + 1), 1000);
+        return () => clearInterval(interval);
+      }, [running]);
+
+      const athletes = [
+        { id: 1, name: "Jack", age: 12, initial: "J", color: "bg-gradient-to-r from-blue-500 to-yellow-400" },
+        { id: 2, name: "Liam", age: 10, initial: "L", color: "bg-gradient-to-r from-green-500 to-blue-400" }
+      ];
+
+      const program = {
+        1: {
+          1: { name: "Speed & Acceleration", dur: 30, sections: [
+            { type: "Warm-up", ex: ["Arm Circles 10x", "Leg Swings 10x", "Light Jog 50m x2", "High Knees 20m"] },
+            { type: "Sprint Drills", ex: ["Wall Marches 3x10", "A-Skips 3x20m", "Push-up Starts 4x"] },
+            { type: "Sprint Work", ex: ["10m Sprint 4x BASELINE", "20m Sprint 3x"] },
+            { type: "Cool-down", ex: ["Hip Flexor 30s", "Hamstring 30s", "Quad 30s"] }
+          ]},
+          2: { name: "Agility & Core", dur: 32, sections: [
+            { type: "Warm-up", ex: ["Side Shuffles 20m", "Carioca 20m"] },
+            { type: "Ladder", ex: ["In & Outs 3x", "Lateral 3x", "Tap Ins 3x"] },
+            { type: "Core", ex: ["Plank 2x30s", "Side Plank 2x20s", "Dead Bugs 2x8"] },
+            { type: "Cool-down", ex: ["Stretches 5min"] }
+          ]},
+          3: { name: "Power", dur: 33, sections: [
+            { type: "Warm-up", ex: ["B-Skips 2x20m"] },
+            { type: "Plyometrics", ex: ["Split Hops 3x10", "Jump Squats 3x8", "Broad Jump 3x"] },
+            { type: "Strength", ex: ["Squats 2x10", "Push-ups 2x10", "Lunges 2x6"] },
+            { type: "Cool-down", ex: ["Stretches"] }
+          ]}
+        }
+      };
+
+      const fmt = (s) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+
+      const complete = () => {
+        const key = `w${week}_d${day}`;
+        setWorkouts(p => ({ ...p, [athlete.id]: { ...(p[athlete.id] || {}), [key]: true }}));
+        setView('dashboard');
+        setSection(0);
+        setTimer(0);
+        setRunning(false);
+      };
+
+      if (view === 'home') {
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 p-6">
+            <div className="max-w-4xl mx-auto">
+              <h1 className="text-5xl font-bold text-white text-center mb-12">⚡ Speed Training Pro</h1>
+              <div className="grid md:grid-cols-2 gap-6 mb-8">
+                {athletes.map(a => (
+                  <div key={a.id} onClick={() => { setAthlete(a); setView('dashboard'); }}
+                    className="bg-white rounded-3xl p-8 shadow-2xl cursor-pointer hover:scale-105 transition">
+                    <div className="flex items-center mb-6">
+                      <div className={`w-20 h-20 ${a.color} rounded-full flex items-center justify-center text-4xl font-bold text-white`}>
+                        {a.initial}
+                      </div>
+                      <div className="ml-4">
+                        <h2 className="text-3xl font-bold">{a.name}</h2>
+                        <p className="text-gray-600">Age {a.age}</p>
+                      </div>
+                    </div>
+                    <button className={`w-full ${a.color} text-white py-4 rounded-2xl font-bold flex items-center justify-center`}>
+                      Start Training <Icon name="right" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => setView('parent')}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 rounded-3xl shadow-2xl flex items-center justify-center">
+                <Icon name="users" size={32} />
+                <span className="font-bold text-xl ml-3">Parent Dashboard</span>
+              </button>
+            </div>
+          </div>
+        );
+      }
+
+      if (view === 'parent') {
+        return (
+          <div className="min-h-screen bg-gray-50 p-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white rounded-3xl p-6 shadow-lg mb-6">
+                <button onClick={() => setView('home')} className="text-blue-600 font-semibold mb-4">← Back</button>
+                <h1 className="text-3xl font-bold">Parent Dashboard</h1>
+              </div>
+              {athletes.map(a => {
+                const total = Object.keys(workouts[a.id] || {}).length;
+                return (
+                  <div key={a.id} className="bg-white rounded-2xl p-6 shadow-lg mb-6">
+                    <div className="flex items-center mb-4">
+                      <div className={`w-16 h-16 ${a.color} rounded-full flex items-center justify-center text-2xl font-bold text-white`}>{a.initial}</div>
+                      <div className="ml-4">
+                        <h2 className="text-2xl font-bold">{a.name}</h2>
+                        <p className="text-gray-600">Age {a.age}</p>
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 rounded-xl p-4 text-center">
+                      <div className="text-3xl font-bold text-blue-600">{total}</div>
+                      <div className="text-xs">Total Workouts</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      }
+
+      if (view === 'dashboard') {
+        const w = workouts[athlete.id] || {};
+        const thisWeek = Object.keys(w).filter(k => k.startsWith(`w${week}_`)).length;
+        
+        return (
+          <div className="min-h-screen bg-gray-50 p-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white rounded-3xl p-6 shadow-lg mb-6">
+                <button onClick={() => setView('home')} className="text-blue-600 font-semibold mb-4">← Back</button>
+                <h1 className="text-4xl font-bold">{athlete.name}</h1>
+                <p className="text-gray-600">Week {week} of 8</p>
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 shadow-lg mb-6">
+                <h2 className="text-2xl font-bold mb-4">This Week's Training</h2>
+                {[1, 2, 3].map(d => {
+                  const wo = program[week]?.[d];
+                  const done = w[`w${week}_d${d}`];
+                  return (
+                    <div key={d} onClick={() => { setDay(d); setView('workout'); }} 
+                      className={`rounded-2xl p-5 mb-3 cursor-pointer ${done ? 'bg-green-50 border-2 border-green-400' : 'bg-blue-50 border-2 border-gray-200'}`}>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <span className="text-2xl mr-3">{done ? '✅' : '▶️'}</span>
+                          <div>
+                            <h3 className="font-bold">Day {d}</h3>
+                            <p className="text-sm text-gray-600">{wo?.name}</p>
+                          </div>
+                        </div>
+                        <div className="text-2xl font-bold text-blue-600">{wo?.dur} min</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (view === 'workout') {
+        const wo = program[week]?.[day];
+        if (!wo) return null;
+        const sec = wo.sections[section];
+
+        return (
+          <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 p-4">
+            <div className="max-w-2xl mx-auto">
+              <div className="bg-white rounded-3xl p-5 shadow-xl mb-4">
+                <button onClick={() => { setView('dashboard'); setSection(0); setTimer(0); setRunning(false); }} 
+                  className="text-blue-600 font-semibold mb-3">← Back</button>
+                <h1 className="text-2xl font-bold mb-2">{wo.name}</h1>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Week {week}, Day {day}</span>
+                  <span className="font-bold text-blue-600">{fmt(timer)}</span>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-4 shadow-xl mb-4">
+                <div className="w-full bg-gray-200 rounded-full h-4">
+                  <div className="bg-blue-500 h-4 rounded-full" 
+                    style={{ width: `${((section + 1) / wo.sections.length) * 100}%` }} />
+                </div>
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 shadow-xl mb-4 max-h-96 overflow-y-auto">
+                <h2 className="text-3xl font-bold mb-4">{sec.type}</h2>
+                {sec.ex.map((e, i) => (
+                  <div key={i} className="bg-blue-50 rounded-xl p-4 mb-3">
+                    <p className="font-semibold">{e}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-white rounded-3xl p-5 shadow-xl">
+                <div className="flex gap-3">
+                  <button onClick={() => setRunning(!running)}
+                    className={`flex-1 ${running ? 'bg-yellow-500' : 'bg-green-500'} text-white py-4 rounded-2xl font-bold`}>
+                    {running ? 'Pause' : 'Start'}
+                  </button>
+                  {section < wo.sections.length - 1 ? (
+                    <button onClick={() => { setSection(section + 1); setRunning(false); }}
+                      className="flex-1 bg-blue-500 text-white py-4 rounded-2xl font-bold">
+                      Next →
+                    </button>
+                  ) : (
+                    <button onClick={complete}
+                      className="flex-1 bg-purple-500 text-white py-4 rounded-2xl font-bold">
+                      Complete! 🎉
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return null;
+    }
+
+    ReactDOM.render(<SpeedTrainingApp />, document.getElementById('root'));
+  </script>
+</body>
+</html>
